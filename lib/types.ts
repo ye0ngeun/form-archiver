@@ -111,6 +111,3 @@ export interface PageRecord {
   };
   blocks: Block[];
 }
-
-/** 저장 시 사용자가 고르는 기록 시점 */
-export type RecordTiming = 'before-submit' | 'after-submit' | 'other';

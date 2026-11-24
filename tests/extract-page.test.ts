@@ -107,7 +107,6 @@ describe('apply-basic.html: 일반적인 입력칸', () => {
   it('마크다운 결과가 예상 파일과 같다', async () => {
     const md = toMarkdown(record, {
       savedAt: new Date(2026, 10, 24, 21, 30),
-      timing: 'before-submit',
     });
     await expect(md).toMatchFileSnapshot('./fixtures/apply-basic.expected.md');
   });

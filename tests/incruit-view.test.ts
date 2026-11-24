@@ -98,7 +98,6 @@ describe('incruit-view.html: 표로 된 제출 후 보기 화면', () => {
   it('마크다운 결과가 예상 파일과 같다', async () => {
     const md = toMarkdown(record, {
       savedAt: new Date(2026, 10, 24, 21, 30),
-      timing: 'after-submit',
     });
     await expect(md).toMatchFileSnapshot('./fixtures/incruit-view.expected.md');
   });

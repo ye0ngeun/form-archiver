@@ -1,3 +1,4 @@
+import { answerLimit, formatNumber, isAnswerField } from './count';
 import type { Block, LabelSource } from './types';
 
 /** 미리보기 목록의 한 줄에 보여줄 내용. 화면(DOM)과 분리해 두어 검사하기 쉽게 한다. */
@@ -67,14 +68,13 @@ export function describeBlock(b: Block): BlockSummary {
       if (b.empty) badges.push({ text: '빈칸', tone: 'warn' });
       if (GUESSED.includes(b.labelSource)) badges.push({ text: '항목명 짐작', tone: 'warn' });
       if (b.kind === 'file') badges.push({ text: '파일 이름만', tone: 'muted' });
-      if (
-        !b.empty &&
-        (b.kind === 'textarea' || b.kind === 'editor' || b.kind === 'display' || b.maxLength)
-      ) {
+      if (!b.empty && (isAnswerField(b) || b.maxLength)) {
+        // 공백 포함 글자 수. 제한(입력칸 maxlength 또는 질문 글의 "1000자 이내")이 있으면 함께 보여준다.
         const n = charCount(b.value);
+        const limit = answerLimit(b);
         badges.push({
-          text: b.maxLength ? `${n} / ${b.maxLength}자` : `${n}자`,
-          tone: b.maxLength && n > b.maxLength ? 'warn' : 'info',
+          text: limit ? `${formatNumber(n)} / ${formatNumber(limit)}자` : `${formatNumber(n)}자`,
+          tone: limit && n > limit ? 'warn' : 'info',
         });
       }
       let body: string;

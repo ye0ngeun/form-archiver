@@ -1,6 +1,6 @@
-import { makeFilename, TIMING_LABEL, toMarkdown } from '../../lib/markdown';
+import { describeScreen, makeFilename, toMarkdown } from '../../lib/markdown';
 import { describeBlock } from '../../lib/preview';
-import type { Block, PageRecord, RecordTiming } from '../../lib/types';
+import type { Block, PageRecord } from '../../lib/types';
 
 /**
  * 팝업 화면. 추출 결과를 받아 미리보기·제외·마크다운 저장을 한다.
@@ -24,7 +24,6 @@ interface State {
   record: PageRecord | null;
   error: string | null;
   excluded: Set<string>;
-  timing: RecordTiming;
   tab: Tab;
   filter: Filter;
   savedAs: string | null;
@@ -71,7 +70,6 @@ export function mountPopup(root: HTMLElement, opts: PopupOptions) {
     record: null,
     error: null,
     excluded: new Set(),
-    timing: 'before-submit',
     tab: 'items',
     filter: 'all',
     savedAs: null,
@@ -101,14 +99,14 @@ export function mountPopup(root: HTMLElement, opts: PopupOptions) {
 
   function currentMarkdown(savedAt: Date): string {
     if (!state.record) return '';
-    return toMarkdown(state.record, { savedAt, timing: state.timing, excluded: state.excluded });
+    return toMarkdown(state.record, { savedAt, excluded: state.excluded });
   }
 
   function download() {
     if (!state.record) return;
     const savedAt = now();
     const md = currentMarkdown(savedAt);
-    const filename = makeFilename(state.record, { savedAt, timing: state.timing });
+    const filename = makeFilename(state.record, { savedAt });
     const url = URL.createObjectURL(new Blob([md], { type: 'text/markdown;charset=utf-8' }));
     const a = h('a', { href: url, download: filename });
     document.body.append(a);
@@ -123,10 +121,15 @@ export function mountPopup(root: HTMLElement, opts: PopupOptions) {
 
   function renderHeader(r: PageRecord) {
     const s = r.stats;
+    const fieldBlocks = r.blocks.filter((b) => b.type === 'field');
+    const answers = fieldBlocks.filter((b) => b.kind === 'display').length;
+    const editable = fieldBlocks.length - answers;
     const chips = h(
       'div',
       { class: 'chips' },
-      h('span', { class: 'chip' }, `입력칸 ${s.fields}`),
+      h('span', { class: 'chip' }, describeScreen(r).replace(/ \(.*\)$/, '')),
+      editable ? h('span', { class: 'chip' }, `입력칸 ${editable}`) : null,
+      answers ? h('span', { class: 'chip' }, `답변 ${answers}`) : null,
       s.emptyFields ? h('span', { class: 'chip warn' }, `빈칸 ${s.emptyFields}`) : null,
       s.guessedLabels ? h('span', { class: 'chip warn' }, `항목명 짐작 ${s.guessedLabels}`) : null,
       s.skipped ? h('span', { class: 'chip muted' }, `민감칸 제외 ${s.skipped}`) : null,
@@ -251,17 +254,6 @@ export function mountPopup(root: HTMLElement, opts: PopupOptions) {
   }
 
   function renderFooter() {
-    const timing = h('div', { class: 'timing', role: 'radiogroup', 'aria-label': '기록 시점' });
-    for (const t of Object.keys(TIMING_LABEL) as RecordTiming[]) {
-      const input = h('input', { type: 'radio', name: 'timing', value: t });
-      input.checked = state.timing === t;
-      input.addEventListener('change', () => {
-        state.timing = t;
-        state.savedAs = null;
-        render();
-      });
-      timing.append(h('label', { class: 'seg' }, input, h('span', {}, TIMING_LABEL[t])));
-    }
     const save = h('button', { type: 'button', class: 'primary' }, '마크다운 저장');
     save.addEventListener('click', download);
     const reloadBtn = h(
@@ -273,7 +265,6 @@ export function mountPopup(root: HTMLElement, opts: PopupOptions) {
     return h(
       'footer',
       { class: 'foot' },
-      timing,
       h('div', { class: 'actions' }, reloadBtn, save),
       state.savedAs
         ? h('div', { class: 'saved', role: 'status' }, `저장했습니다: ${state.savedAs}`)

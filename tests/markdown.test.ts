@@ -15,10 +15,10 @@ describe('escapeLineStarts: 원문이 마크다운 서식으로 바뀌지 않게
 });
 
 describe('makeFilename', () => {
-  it('날짜_시점_제목.md 형태로, 파일 이름에 쓸 수 없는 글자를 뺀다', () => {
+  it('날짜_제목.md 형태로, 파일 이름에 쓸 수 없는 글자를 뺀다', () => {
     const record = { title: 'A/B 회사: 지원서?' } as PageRecord;
-    expect(
-      makeFilename(record, { savedAt: new Date(2026, 10, 24, 21, 30), timing: 'after-submit' }),
-    ).toBe('2026-11-24_2130_제출후_A B 회사 지원서.md');
+    expect(makeFilename(record, { savedAt: new Date(2026, 10, 24, 21, 30) })).toBe(
+      '2026-11-24_2130_A B 회사 지원서.md',
+    );
   });
 });

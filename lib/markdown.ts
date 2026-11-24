@@ -1,14 +1,8 @@
-import type { Block, FieldBlock, PageRecord, RecordTiming, TableBlock } from './types';
-
-export const TIMING_LABEL: Record<RecordTiming, string> = {
-  'before-submit': '제출 전',
-  'after-submit': '제출 후',
-  other: '기타',
-};
+import { describeCount, isAnswerField } from './count';
+import type { Block, FieldBlock, PageRecord, TableBlock } from './types';
 
 export interface MarkdownOptions {
   savedAt: Date;
-  timing: RecordTiming;
   /** 미리보기에서 사용자가 뺀 블록 id */
   excluded?: ReadonlySet<string>;
 }
@@ -83,7 +77,7 @@ export function toMarkdown(record: PageRecord, opts: MarkdownOptions): string {
       `- 페이지: ${record.title}`,
       `- URL: ${record.url}`,
       `- 저장 시각: ${formatDateTime(opts.savedAt)}`,
-      `- 기록 시점: ${TIMING_LABEL[opts.timing]}`,
+      `- 읽은 화면: ${describeScreen(record)}`,
     ].join('\n'),
   ];
 
@@ -132,6 +126,8 @@ export function toMarkdown(record: PageRecord, opts: MarkdownOptions): string {
         // 항목명이 바로 앞 제목에서 왔고 그 제목이 이미 나왔으면, 제목을 한 번 더 쓰지 않는다.
         const underHeading = b.labelHeadingId && shownHeadings.has(b.labelHeadingId);
         if (!underHeading) out.push(heading(sectionLevel + 1, b.label));
+        // 자기소개서처럼 긴 답변은 글자 수를 원문 위에 따로 적는다(원문은 건드리지 않는다).
+        if (isAnswerField(b) && !b.empty) out.push(`_글자 수: ${describeCount(b)}_`);
         out.push(renderFieldValue(b));
         break;
       }
@@ -143,11 +139,20 @@ export function toMarkdown(record: PageRecord, opts: MarkdownOptions): string {
   return `${out.join('\n\n')}\n`;
 }
 
-/** 2026-11-24_2130_제출전_○○기업 신입 개발자 지원.md */
-export function makeFilename(
-  record: PageRecord,
-  opts: Pick<MarkdownOptions, 'savedAt' | 'timing'>,
-) {
+/**
+ * 어떤 화면에서 읽었는지. 사용자가 고르지 않고 읽은 내용으로 정한다.
+ * 입력할 수 있는 칸이 있으면 작성 화면, 없으면 보기 화면(제출 후 화면 등)이다.
+ */
+export function describeScreen(record: PageRecord): string {
+  // 답변을 보여주기만 하는 칸(display)은 입력칸이 아니다. 민감 입력칸은 세지 않지만, 있으면 작성 화면이다.
+  const editable = record.blocks.filter((b) => b.type === 'field' && b.kind !== 'display').length;
+  const sensitive = record.blocks.some((b) => b.type === 'skipped');
+  if (editable > 0) return `작성 화면 (입력칸 ${editable}개)`;
+  return sensitive ? '작성 화면' : '보기 화면 (입력칸 없음)';
+}
+
+/** 2026-11-24_2130_○○기업 신입 개발자 지원.md */
+export function makeFilename(record: PageRecord, opts: Pick<MarkdownOptions, 'savedAt'>) {
   const d = formatDateTime(opts.savedAt).replace(' ', '_').replace(':', '');
   const title = record.title
     .replace(/[\\/:*?"<>|#]/g, ' ')
@@ -155,5 +160,5 @@ export function makeFilename(
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 60);
-  return `${d}_${TIMING_LABEL[opts.timing].replace(' ', '')}_${title || 'page'}.md`;
+  return `${d}_${title || 'page'}.md`;
 }
