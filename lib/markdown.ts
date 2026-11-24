@@ -36,7 +36,13 @@ export function escapeLineStarts(text: string): string {
 }
 
 function escapeTableCell(text: string): string {
-  return text.replace(/\|/g, '\\|').replace(/\n/g, ' ');
+  // 칸 안의 줄바꿈은 <br> 로 살린다. 그래서 원문의 < > 는 글자로 보이게 바꾼다.
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\|/g, '\\|')
+    .replace(/\n/g, '<br>');
 }
 
 function heading(level: number, text: string): string {
@@ -106,6 +112,16 @@ export function toMarkdown(record: PageRecord, opts: MarkdownOptions): string {
         break;
       case 'table':
         out.push(renderTable(b));
+        break;
+      case 'pairs':
+        out.push(
+          b.items
+            .map(
+              (it) =>
+                `- ${it.label}: ${it.value ? it.value.replace(/\n+/g, ' / ') : '_(비어 있음)_'}`,
+            )
+            .join('\n'),
+        );
         break;
       case 'field': {
         // 동의 체크박스처럼 label 이 곧 내용인 단일 체크박스는 한 줄로 쓴다.

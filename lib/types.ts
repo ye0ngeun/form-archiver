@@ -10,6 +10,7 @@ export type LabelSource =
   | 'adjacent' // 바로 앞 짧은 문단 (짐작)
   | 'placeholder' // 입력칸 안의 안내 문구 (짐작)
   | 'name' // HTML name/id 속성 (짐작)
+  | 'table' // 표의 머리칸(th)
   | 'none';
 
 export type FieldKind =
@@ -21,7 +22,8 @@ export type FieldKind =
   | 'radio'
   | 'checkbox'
   | 'checkbox-group'
-  | 'file';
+  | 'file'
+  | 'display'; // 입력칸이 아니라 화면에 보이는 답변(제출 후 보기 화면의 표 등)
 
 export interface ChoiceOption {
   label: string;
@@ -72,6 +74,13 @@ export interface FieldBlock {
   inputType?: string;
 }
 
+/** 항목형 표: "항목(머리칸) → 값" 이 이어지는 표. 예: 병역사항, 기본지원사항 */
+export interface PairsBlock {
+  id: string;
+  type: 'pairs';
+  items: { label: string; value: string }[];
+}
+
 /** 민감 입력칸: 값은 읽지 않았고, 제외했다는 사실만 미리보기에 보여준다. */
 export interface SkippedBlock {
   id: string;
@@ -80,7 +89,14 @@ export interface SkippedBlock {
   reason: string;
 }
 
-export type Block = HeadingBlock | TextBlock | ListBlock | TableBlock | FieldBlock | SkippedBlock;
+export type Block =
+  | HeadingBlock
+  | TextBlock
+  | ListBlock
+  | TableBlock
+  | PairsBlock
+  | FieldBlock
+  | SkippedBlock;
 
 export interface PageRecord {
   title: string;

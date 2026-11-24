@@ -98,12 +98,8 @@ export function extractPage(doc: Document = document, win: Window = window): Pag
   function isHidden(el: Element): boolean {
     if ((el as HTMLElement).hidden) return true;
     if (el.getAttribute('aria-hidden') === 'true') return true;
-    try {
-      const cs = win.getComputedStyle(el);
-      return cs.display === 'none' || cs.visibility === 'hidden';
-    } catch {
-      return false;
-    }
+    const cs = styleOf(el);
+    return !!cs && (cs.display === 'none' || cs.visibility === 'hidden');
   }
 
   function childrenOf(node: Node): Node[] {
@@ -143,9 +139,15 @@ export function extractPage(doc: Document = document, win: Window = window): Pag
   /** 표 셀처럼 입력칸이 섞인 영역의 글자: 입력칸 자리에 현재 값을 끼워 넣는다. */
   function textOf(root: Element): string {
     let out = '';
+    /** 끝에 줄바꿈이 n 개 이상 있게 한다(블록이 겹쳐도 빈 줄이 불어나지 않게). */
+    const breakTo = (n: number) => {
+      if (!out.trim()) return;
+      const have = /\n*$/.exec(out)?.[0].length ?? 0;
+      if (have < n) out += '\n'.repeat(n - have);
+    };
     const rec = (node: Node) => {
       if (node.nodeType === 3) {
-        out += node.nodeValue ?? '';
+        out += sourceText(node);
         return;
       }
       if (node.nodeType !== 1) return;
@@ -160,13 +162,77 @@ export function extractPage(doc: Document = document, win: Window = window): Pag
         if (v) out += ` ${v} `;
         return;
       }
-      const block = BLOCK_TAGS.has(el.tagName);
-      if (block) out += '\n';
+      if (isFileLink(el)) out += '📎 ';
+      const gap = breakBefore(el);
+      breakTo(gap);
       for (const c of childrenOf(el)) rec(c);
-      if (block) out += '\n';
+      breakTo(gap);
     };
     rec(root);
     return clean(out);
+  }
+
+  // ---------- 화면에 보이는 대로 읽기 ----------
+
+  const styleCache = new WeakMap<Element, CSSStyleDeclaration | null>();
+  function styleOf(el: Element): CSSStyleDeclaration | null {
+    if (!styleCache.has(el)) {
+      let cs: CSSStyleDeclaration | null = null;
+      try {
+        cs = (el.ownerDocument.defaultView ?? win).getComputedStyle(el);
+      } catch {
+        cs = null;
+      }
+      styleCache.set(el, cs);
+    }
+    return styleCache.get(el) ?? null;
+  }
+
+  const BLOCK_DISPLAYS = new Set([
+    'block',
+    'flex',
+    'grid',
+    'list-item',
+    'table',
+    'flow-root',
+    'table-row',
+    'table-caption',
+  ]);
+  const PARAGRAPH_TAGS = new Set(['P', 'BLOCKQUOTE', 'PRE', 'UL', 'OL', 'DL', 'TABLE', 'FIGURE']);
+
+  /**
+   * 이 요소 앞뒤에 둘 줄바꿈 수: 0(이어짐), 1(줄바꿈), 2(문단 사이 빈 줄).
+   * 태그 이름이 아니라 실제 화면 표시 방식(CSS display)을 본다. 예: display:block 인 span 은 줄을 나눈다.
+   */
+  function breakBefore(el: Element): number {
+    const display = styleOf(el)?.display;
+    const blockish = display ? BLOCK_DISPLAYS.has(display) : BLOCK_TAGS.has(el.tagName);
+    if (!blockish) return 0;
+    return PARAGRAPH_TAGS.has(el.tagName) ? 2 : 1;
+  }
+
+  /** HTML 소스의 줄바꿈·들여쓰기는 화면에서 공백 하나로 보인다. pre 계열만 그대로 둔다. */
+  function sourceText(node: Node): string {
+    const v = node.nodeValue ?? '';
+    const parent = node.parentElement;
+    const ws = parent ? styleOf(parent)?.whiteSpace : '';
+    if (ws && /^pre/.test(ws)) return v;
+    return v.replace(/[ \t\n\r\f]+/g, ' ');
+  }
+
+  /** 파일 다운로드 링크인지. 링크 주소는 기록하지 않고, 📎 표시만 남긴다. */
+  function isFileLink(el: Element): boolean {
+    if (el.tagName !== 'A') return false;
+    const href = el.getAttribute('href') ?? '';
+    if (!href || href === '#') return false;
+    if (el.hasAttribute('download')) return true;
+    if (/\.(pdf|hwpx?|docx?|xlsx?|pptx?|zip|jpe?g|png|gif)([?#]|$)/i.test(href)) return true;
+    if (/down|attach|file/i.test(href)) return true;
+    let p: Element | null = el;
+    for (let i = 0; p && i < 3; i++, p = p.parentElement) {
+      if (/file|attach/i.test(typeof p.className === 'string' ? p.className : '')) return true;
+    }
+    return false;
   }
 
   function inlineControlValue(el: Element): string {
@@ -486,25 +552,156 @@ export function extractPage(doc: Document = document, win: Window = window): Pag
     pushField({ kind: 'editor', value: text, empty: text.trim() === '' }, label);
   }
 
+  // ---------- 표 ----------
+
+  interface GridCell {
+    text: string;
+    header: boolean;
+    /** 여러 줄에 걸친 칸(rowspan)이 아래 줄로 이어진 자리 */
+    rowCopy: boolean;
+    /** 여러 칸에 걸친 칸(colspan)이 오른쪽으로 이어진 자리 */
+    colCopy: boolean;
+  }
+
+  /** rowspan/colspan 을 펼쳐 모든 줄의 칸 수가 같은 격자로 만든다. */
+  function buildGrid(table: HTMLTableElement): GridCell[][] {
+    const trs = Array.from(table.rows).filter(
+      (tr) => tr.closest('table') === table && !isHidden(tr),
+    );
+    const grid: GridCell[][] = trs.map(() => []);
+    trs.forEach((tr, r) => {
+      let c = 0;
+      for (const cell of Array.from(tr.cells)) {
+        if (isHidden(cell)) continue;
+        const row = grid[r] as GridCell[];
+        while (row[c]) c++;
+        const text = textOf(cell);
+        const header = cell.tagName === 'TH' || /header/.test(cell.getAttribute('role') ?? '');
+        const rs =
+          cell.rowSpan === 0 ? trs.length - r : Math.min(Math.max(cell.rowSpan, 1), trs.length - r);
+        const cs = Math.min(Math.max(cell.colSpan, 1), 50);
+        for (let i = 0; i < rs; i++) {
+          for (let j = 0; j < cs; j++) {
+            const target = grid[r + i] as GridCell[];
+            target[c + j] = { text, header, rowCopy: i > 0, colCopy: j > 0 };
+          }
+        }
+        c += cs;
+      }
+    });
+    const width = Math.max(0, ...grid.map((row) => row.length));
+    return grid
+      .map((row) =>
+        Array.from(
+          { length: width },
+          (_, i) => row[i] ?? { text: '', header: false, rowCopy: false, colCopy: true },
+        ),
+      )
+      .filter((row) => row.length > 0);
+  }
+
+  const LONG_TEXT = 200;
+  const isLong = (t: string) => t.length >= LONG_TEXT || t.includes('\n\n');
+
+  /**
+   * 표를 모양에 따라 세 가지로 기록한다.
+   * - 문서형: 긴 글이 든 표(자기소개서 질문·답변 등) → 질문은 항목명, 답변은 줄바꿈을 살린 원문
+   * - 항목형: 줄마다 "머리칸 → 값" 인 표(병역사항 등) → 항목 목록
+   * - 일반 표: 나머지 → 합쳐진 칸을 펼친 표
+   * 한 칸짜리 짧은 표(첨부서류 목록 등)는 목록으로 기록한다.
+   */
   function handleTable(table: HTMLTableElement) {
-    const rows = Array.from(table.rows)
-      .filter((tr) => tr.closest('table') === table && !isHidden(tr))
-      .map((tr) => {
-        const cells = Array.from(tr.cells);
-        return {
-          header: cells.length > 0 && cells.every((c) => c.tagName === 'TH'),
-          cells: cells.map((c) => textOf(c).replace(/\n+/g, ' / ')),
-        };
-      })
-      .filter((r) => r.cells.length > 0);
-    if (!rows.length) return;
+    const grid = buildGrid(table);
+    if (!grid.length) return;
     flushInline();
+    const width = grid[0]?.length ?? 0;
+    const origins = grid.flat().filter((c) => !c.rowCopy && !c.colCopy);
+
+    if (width === 1 || origins.some((c) => !c.header && isLong(c.text))) {
+      return handleDocumentTable(grid);
+    }
+    const topHeader = grid[0]?.every((c) => c.header) ?? false;
+    if (!topHeader && grid.every((row) => row[0]?.header) && origins.some((c) => !c.header)) {
+      return handlePairsTable(grid);
+    }
     blocks.push({
       id: nextId(),
       type: 'table',
       caption: oneLine(table.caption?.textContent),
-      rows,
+      rows: grid.map((row) => ({
+        header: row.every((c) => c.header),
+        // 여러 줄에 걸친 칸은 줄마다 같은 값을 다시 적고, 여러 칸에 걸친 칸은 오른쪽을 비운다.
+        cells: row.map((c) => (c.colCopy ? '' : c.text)),
+      })),
     });
+  }
+
+  function handleDocumentTable(grid: GridCell[][]) {
+    let pending: Found | null = null;
+    const listItems: string[] = [];
+    const flushList = () => {
+      if (listItems.length) {
+        blocks.push({ id: nextId(), type: 'list', ordered: false, items: listItems.splice(0) });
+      }
+    };
+    for (const row of grid) {
+      const cells = row.filter((c) => !c.rowCopy && !c.colCopy);
+      cells.forEach((cell, i) => {
+        if (cell.header) {
+          pending = { text: oneLine(cell.text), source: 'table' };
+          return;
+        }
+        const next = cells[i + 1];
+        const nextRowFirst = grid[grid.indexOf(row) + 1]?.[0];
+        const followedByLong =
+          (next && !next.header && isLong(next.text)) ||
+          (!next && nextRowFirst && !nextRowFirst.header && isLong(nextRowFirst.text));
+        if (!isLong(cell.text) && !pending && followedByLong) {
+          // 머리칸 표시 없이 질문 칸 다음에 긴 답변 칸이 오는 경우
+          pending = { text: oneLine(cell.text), source: 'adjacent' };
+          return;
+        }
+        if (pending) {
+          flushList();
+          pushField({ kind: 'display', value: cell.text, empty: cell.text.trim() === '' }, pending);
+          pending = null;
+          return;
+        }
+        if (isLong(cell.text)) {
+          flushList();
+          blocks.push({ id: nextId(), type: 'text', text: cell.text });
+        } else if (cell.text) {
+          listItems.push(cell.text.replace(/\n+/g, ' / '));
+        }
+      });
+    }
+    // 답변 칸 없이 끝난 질문(머리칸)은 글로 남긴다.
+    const left = pending as Found | null;
+    if (left) listItems.push(left.text);
+    flushList();
+  }
+
+  function handlePairsTable(grid: GridCell[][]) {
+    const items: { label: string; value: string }[] = [];
+    for (const row of grid) {
+      let label: GridCell | null = null;
+      for (const cell of row) {
+        if (cell.colCopy) continue;
+        if (cell.header) {
+          label = cell;
+          continue;
+        }
+        if (!label || cell.rowCopy) continue;
+        const prev = items[items.length - 1];
+        if (label.rowCopy && prev && prev.label === oneLine(label.text)) {
+          // 머리칸이 여러 줄에 걸쳐 있으면 그 줄들의 값은 한 항목이다.
+          prev.value = [prev.value, cell.text].filter(Boolean).join('\n');
+        } else {
+          items.push({ label: oneLine(label.text), value: cell.text });
+        }
+      }
+    }
+    if (items.length) blocks.push({ id: nextId(), type: 'pairs', items });
   }
 
   function handleList(list: Element) {
@@ -537,7 +734,7 @@ export function extractPage(doc: Document = document, win: Window = window): Pag
 
   function walk(node: Node) {
     if (node.nodeType === 3) {
-      inlineBuf += node.nodeValue ?? '';
+      inlineBuf += sourceText(node);
       return;
     }
     if (node.nodeType !== 1) return;
@@ -573,8 +770,9 @@ export function extractPage(doc: Document = document, win: Window = window): Pag
 
     // 항목명으로 쓰이는 label/legend: 글자는 건너뛰고, 안에 든 입력칸만 처리한다.
     const asLabel = isLabelForControl(el);
-    const block = BLOCK_TAGS.has(tag);
+    const block = BLOCK_TAGS.has(tag) || breakBefore(el) > 0;
     if (block) flushInline();
+    if (isFileLink(el)) inlineBuf += '📎 ';
     for (const child of childrenOf(el)) {
       if (asLabel) {
         if (child.nodeType !== 1) continue;

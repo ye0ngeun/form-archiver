@@ -58,6 +58,8 @@ function blockKey(b: Block): string {
       return `${b.type}:${b.text}`;
     case 'list':
       return `list:${b.items.join('\n')}`;
+    case 'pairs':
+      return `pairs:${b.items.map((it) => it.label).join('|')}`;
     case 'table':
       return `table:${b.caption}:${b.rows[0]?.cells.join('|') ?? ''}`;
   }

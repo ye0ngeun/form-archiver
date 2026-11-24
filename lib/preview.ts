@@ -46,6 +46,14 @@ export function describeBlock(b: Block): BlockSummary {
         badges: [{ text: `${b.rows.length}행`, tone: 'muted' }],
         excludable: true,
       };
+    case 'pairs':
+      return {
+        kind: '항목표',
+        title: '',
+        body: shorten(b.items.map((it) => `${it.label}: ${it.value || '–'}`).join(' · ')),
+        badges: [{ text: `${b.items.length}개`, tone: 'muted' }],
+        excludable: true,
+      };
     case 'skipped':
       return {
         kind: '제외',
@@ -59,7 +67,10 @@ export function describeBlock(b: Block): BlockSummary {
       if (b.empty) badges.push({ text: '빈칸', tone: 'warn' });
       if (GUESSED.includes(b.labelSource)) badges.push({ text: '항목명 짐작', tone: 'warn' });
       if (b.kind === 'file') badges.push({ text: '파일 이름만', tone: 'muted' });
-      if (!b.empty && (b.kind === 'textarea' || b.kind === 'editor' || b.maxLength)) {
+      if (
+        !b.empty &&
+        (b.kind === 'textarea' || b.kind === 'editor' || b.kind === 'display' || b.maxLength)
+      ) {
         const n = charCount(b.value);
         badges.push({
           text: b.maxLength ? `${n} / ${b.maxLength}자` : `${n}자`,
@@ -72,7 +83,13 @@ export function describeBlock(b: Block): BlockSummary {
       } else {
         body = b.empty ? '(비어 있음)' : shorten(b.value);
       }
-      return { kind: '입력', title: b.label, body, badges, excludable: true };
+      return {
+        kind: b.kind === 'display' ? '답변' : '입력',
+        title: b.label,
+        body,
+        badges,
+        excludable: true,
+      };
     }
   }
 }

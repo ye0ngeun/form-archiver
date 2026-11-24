@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>가나다카드 채용사이트</title>
+    <style>
+      /* 인크루트 제출 후 보기 화면과 같은 구조를 재현한 가짜 페이지. 내용은 모두 지어낸 것이다. */
+      .viewTxt { display: block; }
+      h3 { display: inline-block; }
+    </style>
+  </head>
+  <body>
+    <div><div><div>
+      <span><h3>가나다카드 입사지원서 [gnd00001]</h3></span>
+
+      <!-- 항목형 표: 머리칸(th)이 여러 줄에 걸쳐 합쳐져 있다 -->
+      <span><h3>기본지원사항</h3></span>
+      <span>
+        <table class="writeFormGray">
+          <tr><th rowspan="2">지원분야</th><td><b>[부문]</b> 2026년 가나다카드 신입 채용</td></tr>
+          <tr><td><b>[분야]</b> ICT 개발</td></tr>
+        </table>
+      </span>
+
+      <!-- 항목형 표: 한 줄에 항목·값이 번갈아 나오고, 값 칸이 여러 칸을 차지한다 -->
+      <span><h3>병역사항</h3></span>
+      <span>
+        <table class="writeFormGray">
+          <tr><th>군필여부</th><td>비대상</td><th>군별</th><td></td><th>계급</th><td></td></tr>
+          <tr><th>기간</th><td colspan="5"></td></tr>
+        </table>
+      </span>
+
+      <!-- 일반 표: 머리 줄 + 머리칸 두 줄 + CSS 로 줄을 나눈 칸 -->
+      <span><h3>학력사항</h3></span>
+      <span>
+        <table class="writeFormGray">
+          <tr><th>구분</th><th>학교명</th><th>기간</th><th>취득학점</th></tr>
+          <tr><td>고등학교</td><td>라마고등학교</td><td>2016년 03월 입학 ~<br />2019년 02월 졸업</td><td></td></tr>
+          <tr>
+            <td>대학교</td><td>바사대<br />공학</td><td>2019년 03월 입학 ~<br />2025년 02월 졸업</td>
+            <td><span class="viewTxt marginBottom">총점:4.5</span><span class="viewTxt marginBottom">평점:3.80</span><span class="viewTxt">전공평점:3.90</span></td>
+          </tr>
+        </table>
+      </span>
+
+      <!-- 일반 표: 첫 칸이 여러 줄에 걸쳐 합쳐져 있다 -->
+      <span><h3>외국어사항</h3></span>
+      <span>
+        <table class="writeFormGray">
+          <tr><th>언어</th><th>시험명</th><th>점수</th></tr>
+          <tr><td rowspan="3">영어</td><td>TOEIC-Speaking</td><td>IH (150점)</td></tr>
+          <tr><td>OPIc</td><td></td></tr>
+          <tr><td>OPI</td><td></td></tr>
+          <tr><td rowspan="2">일어</td><td>OPIc</td><td></td></tr>
+          <tr><td>OPI</td><td></td></tr>
+        </table>
+      </span>
+
+      <!-- 머리 줄만 있는 빈 표 -->
+      <span><h3>전문자격증</h3></span>
+      <span>
+        <table class="writeFormGray">
+          <tr><th>자격증</th><th>취득일</th></tr>
+        </table>
+      </span>
+
+      <!-- 문서형 표: 질문 줄과 답변 줄이 번갈아 나오는 한 칸짜리 표, 답변은 여러 문단 -->
+      <span><h3>자기소개사항</h3></span>
+      <span>
+        <table class="writeFormGray2">
+          <tr><th>*가나다카드를 선택한 이유를 서술해 주세요.</th></tr>
+          <tr>
+            <td>
+              <p>[연결을 상생으로]</p>
+              <p>지속 가능한 사업은 모두에게 이익이 돌아갈 때 성장한다고 믿습니다.
+                기술 자체에 매몰되지 않고, 누가 무엇을 얻는지까지 설계하고 싶습니다.</p>
+              <p>- 첫째, 사용자 가까이에서 일하겠습니다.<br />- 둘째, 데이터로 확인하겠습니다.</p>
+            </td>
+          </tr>
+          <tr><th>*직무 역량을 쌓아온 경험을 서술해 주세요.<br />: 수행내역, 역할, 사용한 기술 등</th></tr>
+          <tr>
+            <td>[검증으로 신뢰를 만들다]<br /><br />정상 상황의 구현에 만족하지 않고 예외까지 검증해 왔습니다.<br /><br />첫째, 동시성 문제를 비관적 락으로 해결했습니다.</td>
+          </tr>
+        </table>
+      </span>
+
+      <!-- 한 칸짜리 목록 표: 링크가 걸린 항목만 실제로 첨부한 것 -->
+      <span><h3>첨부서류</h3></span>
+      <span>
+        <table class="writeFormGray3">
+          <tr><td><span class="filename"><a href="javascript:fileDown('a1')">[필수] 최종학교 졸업증명서</a></span></td></tr>
+          <tr><td>[해당자] 보훈대상자 증명서 사본</td></tr>
+          <tr><td><span class="filename"><a href="/common/download.asp?f=b2">[해당자] 경력증명서</a></span></td></tr>
+        </table>
+      </span>
+
+      <p>작성일자 2026년 11월 16일 / 지원자 홍길동 (인)</p>
+    </div></div></div>
+  </body>
+</html>
