@@ -22,6 +22,7 @@
 
 - `lib/extract-page.ts` 의 `extractPage` 는 탭 안으로 소스 글자만 옮겨 실행된다. 함수 밖의 변수·함수·import(타입 제외)를 쓰지 않는다.
 - 요소 구분은 `instanceof` 대신 `tagName` 으로 한다(iframe 안 요소 때문).
+- 페이지에서 읽은 글자를 화면에 넣을 때는 `textContent` 만 쓴다. `innerHTML` 금지.
 - 새 의존성은 사용자 승인 후에 추가한다.
 
 ## 시험 페이지와 예상 결과

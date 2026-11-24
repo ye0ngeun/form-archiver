@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>팝업 미리보기 (개발용)</title>
+    <link rel="stylesheet" href="/entrypoints/popup/style.css" />
+    <style>
+      /* 개발용 틀: 왼쪽은 실제 팝업 크기, 오른쪽은 시험 페이지 */
+      body.preview-shell { width: auto; display: flex; gap: 16px; padding: 16px; background: var(--soft); }
+      .popup-frame { width: 440px; flex: none; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+      .page-frame { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+      .page-frame iframe { flex: 1; min-height: 580px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+      .page-frame p { margin: 0; color: var(--sub); }
+    </style>
+  </head>
+  <body class="preview-shell">
+    <div class="popup-frame"><main id="app"></main></div>
+    <div class="page-frame">
+      <p>
+        시험 페이지:
+        <select id="fixture">
+          <option value="/tests/fixtures/apply-basic.html">apply-basic.html</option>
+        </select>
+        — 오른쪽 페이지에서 값을 바꾸고 팝업의 "다시 읽기"를 누르면 반영된다.
+      </p>
+      <iframe id="page" title="시험 페이지"></iframe>
+    </div>
+    <script type="module" src="./popup.ts"></script>
+  </body>
+</html>
