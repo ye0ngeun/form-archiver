@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>가나다전자 2026 하반기 신입 개발자 지원</title>
+    <style>
+      .collapsed { display: none; }
+    </style>
+  </head>
+  <body>
+    <!-- 시험 페이지: 실제 회사·사람과 무관한 가짜 지원서. 각 구역이 확인하는 내용은 docs/harness.md 참고 -->
+    <nav>홈 &gt; 채용 &gt; 지원서 작성</nav>
+
+    <h1>가나다전자 2026 하반기 신입 개발자</h1>
+    <p>작성한 내용은 <strong>제출 전까지</strong> 수정할 수 있습니다.</p>
+
+    <form id="apply">
+      <h2>기본 정보</h2>
+      <!-- label[for] -->
+      <div class="row">
+        <label for="name">이름</label>
+        <input id="name" name="name" type="text" value="홍길동" />
+      </div>
+      <!-- label 로 감싼 입력칸 -->
+      <div class="row">
+        <label>이메일 <input name="email" type="email" value="gildong@example.com" /></label>
+      </div>
+      <!-- 항목명이 없고 placeholder 만 있는 칸 -->
+      <div class="row">
+        <input name="phone" type="tel" placeholder="휴대폰 번호" value="010-0000-0000" />
+      </div>
+      <!-- 민감 입력칸: 값을 읽으면 안 된다 -->
+      <div class="row">
+        <label for="pw">지원서 비밀번호</label>
+        <input id="pw" type="password" value="secret-pw-1234" />
+      </div>
+      <div class="row">
+        <label for="otp">인증번호</label>
+        <input id="otp" name="otp_code" autocomplete="one-time-code" value="928374" />
+      </div>
+      <input type="hidden" name="csrf" value="HIDDEN-TOKEN" />
+
+      <!-- 드롭다운: "선택하세요"(value="") 는 고르지 않은 것 -->
+      <label for="school">최종 학력</label>
+      <select id="school">
+        <option value="">선택하세요</option>
+        <option value="hs">고등학교 졸업</option>
+        <option value="univ" selected>대학교 졸업(4년)</option>
+      </select>
+      <label for="region">희망 근무지</label>
+      <select id="region">
+        <option value="" selected>선택하세요</option>
+        <option value="seoul">서울</option>
+      </select>
+
+      <!-- 라디오 묶음 -->
+      <fieldset>
+        <legend>병역 사항</legend>
+        <label><input type="radio" name="military" value="done" checked /> 군필</label>
+        <label><input type="radio" name="military" value="exempt" /> 면제</label>
+        <label><input type="radio" name="military" value="na" /> 해당 없음</label>
+      </fieldset>
+
+      <!-- 체크박스 묶음 -->
+      <fieldset>
+        <legend>사용 가능한 언어</legend>
+        <label><input type="checkbox" name="lang" value="ts" checked /> TypeScript</label>
+        <label><input type="checkbox" name="lang" value="py" /> Python</label>
+        <label><input type="checkbox" name="lang" value="java" checked /> Java</label>
+      </fieldset>
+
+      <h2>경력</h2>
+      <section class="career">
+        <h3>경력 1</h3>
+        <label for="c1-company">회사명</label>
+        <input id="c1-company" value="라마바소프트" />
+        <label for="c1-desc">담당 업무</label>
+        <textarea id="c1-desc">결제 API 유지보수
+- 장애 대응 매뉴얼 작성</textarea>
+      </section>
+      <section class="career">
+        <h3>경력 2</h3>
+        <label for="c2-company">회사명</label>
+        <input id="c2-company" value="" />
+        <label for="c2-desc">담당 업무</label>
+        <textarea id="c2-desc"></textarea>
+      </section>
+
+      <h2>자기소개서</h2>
+      <!-- 흔한 ATS 형태: 질문이 div, label 연결 없음 -->
+      <div class="question">
+        <div class="q-title">1. 지원 동기를 작성해 주세요. (1000자 이내)</div>
+        <textarea name="essay1" maxlength="1000">제가 이 직무에 지원한 이유는 두 가지입니다.
+
+# 첫째, 사용자 가까이에서 일하고 싶습니다.
+1. 고객 문의를 직접 분석해 본 경험이 있습니다.</textarea>
+      </div>
+      <!-- 제목 바로 아래 입력칸 -->
+      <h3>문제 해결 경험</h3>
+      <textarea name="essay2"></textarea>
+      <!-- 특수 에디터(contenteditable) -->
+      <div class="question">
+        <div id="q3">3. 입사 후 포부</div>
+        <div class="editor" role="textbox" aria-multiline="true" contenteditable="true" aria-labelledby="q3">
+          <p>첫 1년은 서비스 구조를 익히겠습니다.</p>
+          <p>이후에는 <b>운영 자동화</b>에 기여하고 싶습니다.</p>
+        </div>
+      </div>
+
+      <h2>첨부</h2>
+      <label for="resume">이력서 파일</label>
+      <input id="resume" type="file" />
+
+      <!-- 숨겨진 영역: 1단계에서는 읽지 않는다 -->
+      <div class="collapsed">
+        <label for="hidden-note">숨은 메모</label>
+        <input id="hidden-note" value="보이지 않아야 함" />
+      </div>
+
+      <h2>제출 안내</h2>
+      <table>
+        <caption>전형 일정</caption>
+        <tr><th>단계</th><th>일정</th></tr>
+        <tr><td>서류 마감</td><td>12월 5일</td></tr>
+        <tr><td>면접</td><td>12월 중 | 개별 안내</td></tr>
+      </table>
+      <ul>
+        <li>제출 후에는 수정할 수 없습니다.</li>
+        <li>허위 기재 시 합격이 취소될 수 있습니다.</li>
+      </ul>
+      <label><input type="checkbox" name="agree" checked /> 개인정보 수집·이용에 동의합니다.</label>
+
+      <button type="submit">제출하기</button>
+    </form>
+    <script>
+      // 시험 페이지의 스크립트는 실행되지 않아야 한다.
+      document.body.dataset.ran = "yes";
+    </script>
+  </body>
+</html>

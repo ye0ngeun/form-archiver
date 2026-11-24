@@ -1,7 +1,7 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.6.8/schema.json",
   "files": {
-    "includes": ["**", "!.output", "!.wxt", "!node_modules"]
+    "includes": ["**", "!.output", "!.wxt", "!node_modules", "!tests/fixtures"]
   },
   "formatter": {
     "indentStyle": "space",
