@@ -5,6 +5,7 @@
 - 기획: [docs/기획.md](docs/기획.md)
 - 완료 조건과 검증 기록: [docs/harness.md](docs/harness.md)
 - 구조 설명: [docs/구조.md](docs/구조.md)
+- AI 작업 규칙: [AGENTS.md](AGENTS.md) (Claude 는 [CLAUDE.md](CLAUDE.md) 를 거쳐 읽는다), 권한·표기 설정은 `.claude/settings.json`
 
 ## 개발
 
@@ -22,3 +23,8 @@ npm run zip      # 웹스토어 업로드용 zip 생성
 1. `npm run build`
 2. 크롬에서 `chrome://extensions` → 오른쪽 위 **개발자 모드** 켜기
 3. **압축해제된 확장 프로그램을 로드합니다** → `.output/chrome-mv3` 폴더 선택
+
+### 커밋 전 자동 검사
+
+`npm install` 하면 Husky 가 git 에 연결되어, 커밋할 때마다 `.husky/pre-commit` 의 검사
+(`npm run check` → `npm run compile` → `npm test`)를 실행한다. 하나라도 실패하면 커밋이 만들어지지 않는다.

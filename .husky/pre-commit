@@ -1,0 +1,4 @@
+# 커밋 전 빠른 검사: 형식·린트 → 타입 → 자동 검사. 하나라도 실패하면 커밋이 막힌다.
+npm run check
+npm run compile
+npm test
